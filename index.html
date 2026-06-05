@@ -25,12 +25,16 @@
             padding: 24px;
             box-sizing: border-box;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* Aligns everything strictly to the top */
+            align-items: flex-start;     /* Aligns everything strictly to the left */
         }
 
         .dashboard-container {
-            max-width: 1600px;
-            margin: 0 auto;
+            max-width: 1400px; /* Gives the graph a bit more room on ultra-wide monitors */
             width: 100%;
+            margin: 0; /* Removes centering margins so it anchors to the left side */
         }
 
         /* Top Header Styling */
@@ -43,6 +47,7 @@
             margin-bottom: 24px;
             flex-wrap: wrap;
             gap: 15px;
+            width: 100%;
         }
 
         h1 {
@@ -81,8 +86,9 @@
         /* Grid Layout Configuration */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 350px 1fr;
+            grid-template-columns: 320px 1fr;
             gap: 24px;
+            width: 100%;
         }
 
         /* Reusable Card Classes */
@@ -156,14 +162,13 @@
             margin-top: 4px;
         }
 
-        /* Dynamic Graphic Viewport Adjustments (Fixes Big Screens) */
+        /* Graphic Container Framework */
         .chart-container {
             display: flex;
             flex-direction: column;
             justify-content: center;
             position: relative;
-            height: 60vh; /* Takes up 60% of vertical screen space on large monitors */
-            min-height: 500px;
+            height: 520px; /* Balanced height for crisp chart rendering */
         }
 
         /* Custom toggle design elements */
@@ -185,7 +190,7 @@
         input:checked + .slider { background-color: var(--status-red); }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        /* Media Queries for Responsive Scale (Fixes Mobile Stretch & Layout Collapse) */
+        /* Responsive Breakpoints */
         @media (max-width: 1024px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
@@ -203,8 +208,8 @@
                 font-size: 3rem;
             }
             .chart-container {
-                height: 350px; /* Locks a solid aspect-ratio height on mobile screens */
-                min-height: 350px;
+                height: 320px;
+                min-height: 320px;
                 padding: 12px;
             }
         }
@@ -284,12 +289,12 @@
             let osc = audioCtx.createOscillator();
             let gain = audioCtx.createGain();
             osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(880, audioCtx.currentTime); // High pitch frequency alarm tone
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
             gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.15); // Staccato beeping rhythm pulse
+            osc.stop(audioCtx.currentTime + 0.15);
         }
 
         // Setup ChartJS Dashboard Config
@@ -312,7 +317,7 @@
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false, // --- FIXES DESKTOP AND MOBILE SCALING ---
+                maintainAspectRatio: false,
                 plugins: {
                     legend: { labels: { color: '#f8fafc', font: { weight: 'bold' } } }
                 },
@@ -332,7 +337,6 @@
             }
         });
 
-        // Metrics Tracking Registers
         let historicalPeak = 0;
         let cumulativeSum = 0;
         let sessionReadingsCount = 0;
@@ -356,16 +360,13 @@
                 gasValues.push(val);
                 latestValue = val;
 
-                // Compute Running Metrics
                 if(val > historicalPeak) historicalPeak = val;
             });
 
-            // Calculate metrics averages based on viewport frame window array slice
             sessionReadingsCount += 1;
             cumulativeSum += latestValue;
             const currentAvg = Math.round(cumulativeSum / sessionReadingsCount);
 
-            // Update DOM Elements
             const numericValueDisplay = document.getElementById('currentValue');
             const statusIndicator = document.getElementById('statusIndicator');
             
@@ -374,7 +375,6 @@
             document.getElementById('avgValue').innerText = currentAvg;
             document.getElementById('totalLogs').innerText = sessionReadingsCount;
 
-            // Threshold Safety Handling Logic Rules
             if (latestValue < 300) {
                 numericValueDisplay.style.color = "var(--status-green)";
                 statusIndicator.innerText = "System Safe";
@@ -390,10 +390,9 @@
                 statusIndicator.innerText = "CRITICAL GAS EVACUATE";
                 statusIndicator.style.color = "#ffffff";
                 statusIndicator.style.backgroundColor = "var(--status-red)";
-                playAlarmSound(); // Trigger continuous siren pulses if sound is enabled
+                playAlarmSound();
             }
 
-            // Sync structural changes over to the Chart instance viewport arrays
             gasChart.data.labels = timestamps;
             gasChart.data.datasets[0].data = gasValues;
             gasChart.update();
