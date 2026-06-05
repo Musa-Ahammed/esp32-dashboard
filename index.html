@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 MQ-2 Gas Level Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        p.subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .live-value-box {
+            text-align: center;
+            background: #eef2f7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        #currentValue {
+            color: #e74c3c;
+            font-size: 2rem;
+            display: block;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>CO2 Monitoring-ATM-Gulshan-1</h1>
+        <p class="subtitle">Real-time MQ-2 Sensor Data Stream</p>
+
+        <div class="live-value-box">
+            CURRENT GAS LEVEL
+            <span id="currentValue">Loading...</span>
+        </div>
+
+        <canvas id="gasChart" width="400" height="180"></canvas>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, query, limitToLast, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // =============================================================
+        // REPLACE THE VALUES BELOW WITH YOUR FIREBASE WEB CONFIG CONFIG
+        // =============================================================
+// =============================================================
+        // REPLACE THE VALUES BELOW WITH YOUR FIREBASE WEB CONFIG CONFIG
+        // =============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCBxVrCL6BAbqN8qeDJNTuWEEiWu-v-8MI",
+            authDomain: "esp-mqtt-render-git-firebase.firebaseapp.com",
+            databaseURL: "https://esp-mqtt-render-git-firebase-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "esp-mqtt-render-git-firebase",
+            storageBucket: "esp-mqtt-render-git-firebase.firebasestorage.app",
+            messagingSenderId: "375524375305",
+            appId: "1:375524375305:web:f09d260f9ad280efcd71d8",
+            measurementId: "G-93Z3CD33E9"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Setup Chart.js Line Chart Configuration
+        const ctx = document.getElementById('gasChart').getContext('2d');
+        const gasChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [], 
+                datasets: [{
+                    label: 'Gas Level (MQ-2 Sensor)',
+                    data: [], 
+                    borderColor: '#2980b9',
+                    backgroundColor: 'rgba(41, 128, 185, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: 'Time (Local)' } },
+                    y: { title: { display: true, text: 'Gas Value' }, beginAtZero: true }
+                }
+            }
+        });
+
+        // Listen to Firebase for live updates (Limits view to the last 20 entries)
+        const sensorRef = query(ref(db, 'sensor_logs'), limitToLast(20));
+        
+        onValue(sensorRef, (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            const timestamps = [];
+            const gasValues = [];
+            let latestValue = 0;
+
+            Object.keys(data).forEach(key => {
+                const log = data[key];
+                const timeString = new Date(log.timestamp).toLocaleTimeString();
+                
+                timestamps.push(timeString);
+                gasValues.push(log.gas_value);
+                latestValue = log.gas_value;
+            });
+
+            // Update UI
+            document.getElementById('currentValue').innerText = latestValue;
+
+            // Update chart lines instantly
+            gasChart.data.labels = timestamps;
+            gasChart.data.datasets[0].data = gasValues;
+            gasChart.update();
+        });
+    </script>
+</body>
+</html>
