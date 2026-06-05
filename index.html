@@ -85,12 +85,6 @@
             gap: 24px;
         }
 
-        @media (max-width: 1024px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
         /* Reusable Card Classes */
         .card {
             background-color: var(--card-bg);
@@ -162,11 +156,13 @@
             margin-top: 4px;
         }
 
-        /* Center Main Chart Area */
+        /* Dynamic Graphic Viewport Adjustments (Fixes Big Screens) */
         .chart-container {
             display: flex;
             flex-direction: column;
             justify-content: center;
+            position: relative;
+            height: 60vh; /* Takes up 60% of vertical screen space on large monitors */
             min-height: 500px;
         }
 
@@ -188,6 +184,30 @@
         }
         input:checked + .slider { background-color: var(--status-red); }
         input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Media Queries for Responsive Scale (Fixes Mobile Stretch & Layout Collapse) */
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+            h1 {
+                font-size: 1.4rem;
+            }
+            #currentValue {
+                font-size: 3rem;
+            }
+            .chart-container {
+                height: 350px; /* Locks a solid aspect-ratio height on mobile screens */
+                min-height: 350px;
+                padding: 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -292,7 +312,7 @@
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
+                maintainAspectRatio: false, // --- FIXES DESKTOP AND MOBILE SCALING ---
                 plugins: {
                     legend: { labels: { color: '#f8fafc', font: { weight: 'bold' } } }
                 },
@@ -340,7 +360,7 @@
                 if(val > historicalPeak) historicalPeak = val;
             });
 
-            // Calculate mock running metrics averages based on viewport frame window array slice
+            // Calculate metrics averages based on viewport frame window array slice
             sessionReadingsCount += 1;
             cumulativeSum += latestValue;
             const currentAvg = Math.round(cumulativeSum / sessionReadingsCount);
